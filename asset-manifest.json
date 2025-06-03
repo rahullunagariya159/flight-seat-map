@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/flight-seat-map/static/css/main.e5cdda46.css",
+    "main.js": "/flight-seat-map/static/js/main.95ab7966.js",
+    "static/js/453.e5586502.chunk.js": "/flight-seat-map/static/js/453.e5586502.chunk.js",
+    "index.html": "/flight-seat-map/index.html",
+    "main.e5cdda46.css.map": "/flight-seat-map/static/css/main.e5cdda46.css.map",
+    "main.95ab7966.js.map": "/flight-seat-map/static/js/main.95ab7966.js.map",
+    "453.e5586502.chunk.js.map": "/flight-seat-map/static/js/453.e5586502.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e5cdda46.css",
+    "static/js/main.95ab7966.js"
+  ]
+}
