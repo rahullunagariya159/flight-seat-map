@@ -1,60 +1,118 @@
 // components/SeatMap/SeatMap.tsx
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import seatData from '../../data/seatMap.json';
 import SeatRow from './SeatRow';
-import { StyledSeatMapContainer } from './styles';
+import {
+    StyledSeatMapContainer,
+    AircraftOutline,
+    CabinSection,
+    CabinLabel,
+    ExitRow,
+    ExitSign,
+    WingIndicator
+} from './styles';
 import SummaryPanel from './SummaryPanel';
-import HeaderInfo from './HeaderInfo';
+import Legend from './Legend';
 
 interface SeatInfo {
     code?: string;
     available: boolean;
     total?: { alternatives: { amount: number; currency: string }[][] };
+    type?: 'window' | 'middle' | 'aisle' | 'exit';
 }
 
 const SeatMap: React.FC = () => {
-    const rows =
-        seatData.seatsItineraryParts[0]?.segmentSeatMaps[0]?.passengerSeatMaps[0]?.seatMap?.cabins[0]
-            ?.seatRows ?? [];
-    const itinerary = seatData.seatsItineraryParts[0];
-    const segment = itinerary.segmentSeatMaps[0].segment;
-    const passenger = itinerary.segmentSeatMaps[0].passengerSeatMaps[0];
-    const seatMap = passenger.seatMap;
-
+    const rows = seatData.seatsItineraryParts[0]?.segmentSeatMaps[0]?.passengerSeatMaps[0]?.seatMap?.cabins[0]?.seatRows ?? [];
     const [selectedSeats, setSelectedSeats] = useState<SeatInfo[]>([]);
 
+    // Split rows into cabin classes (you'll need to adjust these based on your actual data)
+    const { firstClassRows, businessClassRows, economyClassRows } = useMemo(() => {
+        return {
+            firstClassRows: rows.slice(0, 4),    // Adjust indices based on your data
+            businessClassRows: rows.slice(4, 12), // Adjust indices based on your data
+            economyClassRows: rows.slice(12)      // The rest are economy
+        };
+    }, [rows]);
+
     const toggleSeat = (seat: SeatInfo) => {
-        if (!seat.code) return;
-        setSelectedSeats((prev) =>
-            prev.find((s) => s.code === seat.code)
-                ? prev.filter((s) => s.code !== seat.code)
+        if (!seat.code || !seat.available) return;
+        setSelectedSeats(prev =>
+            prev.some(s => s.code === seat.code)
+                ? prev.filter(s => s.code !== seat.code)
                 : [...prev, seat]
         );
     };
 
+    // Determine exit rows (adjust based on your data)
+    const exitRowNumbers = [14, 30]; // Example exit row numbers
+
     return (
-        <>
-            {/* <HeaderInfo
-                from={segment.departure}
-                to={segment.arrival}
-                flightNumber={segment.flight.flightNumber.toString()}
-                aircraft={seatMap.aircraft}
-                passengerCode={itinerary.segmentSeatMaps[0].passengerSeatMaps[0].passenger.passengerIndex.toString()}
-                seatSelectionEnabled={passenger.seatSelectionEnabledForPax}
-            /> */}
-            <StyledSeatMapContainer>
-                {rows.map((row, rowIndex) => (
-                    <SeatRow
-                        key={rowIndex}
-                        rowNumber={row.rowNumber}
-                        seats={row.seats}
-                        selectedSeats={selectedSeats}
-                        onSeatClick={toggleSeat}
-                    />
-                ))}
-            </StyledSeatMapContainer>
+        <StyledSeatMapContainer>
+            <AircraftOutline>
+                <Legend />
+                {/* First Class Section */}
+                <CabinSection className="first-class">
+                    <CabinLabel>First Class</CabinLabel>
+                    {firstClassRows.map((row, index) => (
+                        <SeatRow
+                            key={`first-${index}`}
+                            rowNumber={row.rowNumber}
+                            seats={row.seats}
+                            selectedSeats={selectedSeats}
+                            onSeatClick={toggleSeat}
+                            cabinType="first"
+                        />
+                    ))}
+                </CabinSection>
+
+                {/* Business Class Section */}
+                <CabinSection className="business-class">
+                    <CabinLabel>Business Class</CabinLabel>
+                    {businessClassRows.map((row, index) => (
+                        <SeatRow
+                            key={`business-${index}`}
+                            rowNumber={row.rowNumber}
+                            seats={row.seats}
+                            selectedSeats={selectedSeats}
+                            onSeatClick={toggleSeat}
+                            cabinType="business"
+                            isExitRow={exitRowNumbers.includes(row.rowNumber)}
+                        />
+                    ))}
+                </CabinSection>
+
+                {/* Wing Indicator */}
+                <WingIndicator>
+                    <span>Wing</span>
+                </WingIndicator>
+
+                {/* Economy Class Section */}
+                <CabinSection className="economy-class">
+                    <CabinLabel>Economy Class</CabinLabel>
+                    {economyClassRows.map((row, index) => {
+                        const isExitRow = exitRowNumbers.includes(row.rowNumber);
+                        return (
+                            <React.Fragment key={`economy-${index}`}>
+                                {isExitRow && (
+                                    <ExitRow>
+                                        <ExitSign>Exit</ExitSign>
+                                    </ExitRow>
+                                )}
+                                <SeatRow
+                                    rowNumber={row.rowNumber}
+                                    seats={row.seats}
+                                    selectedSeats={selectedSeats}
+                                    onSeatClick={toggleSeat}
+                                    cabinType="economy"
+                                    isExitRow={isExitRow}
+                                />
+                            </React.Fragment>
+                        );
+                    })}
+                </CabinSection>
+            </AircraftOutline>
             <SummaryPanel selectedSeats={selectedSeats} />
-        </>
+        </StyledSeatMapContainer>
     );
 };
 

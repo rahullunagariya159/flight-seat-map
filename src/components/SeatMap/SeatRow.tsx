@@ -7,7 +7,7 @@ interface SeatInfo {
     code?: string;
     available: boolean;
     total?: { alternatives: { amount: number; currency: string }[][] };
-    storefrontSlotCode?: string;
+    type?: 'window' | 'middle' | 'aisle' | 'exit';
 }
 
 interface SeatRowProps {
@@ -15,27 +15,51 @@ interface SeatRowProps {
     rowNumber: number;
     selectedSeats: SeatInfo[];
     onSeatClick: (seat: SeatInfo) => void;
+    cabinType?: 'first' | 'business' | 'economy';
+    isExitRow?: boolean;
 }
 
-const SeatRow: React.FC<SeatRowProps> = ({ seats, rowNumber, selectedSeats, onSeatClick }) => {
-    return (
-        <StyledSeatRow>
-            <div>{rowNumber}</div>
-            {seats.map((seat, index) => {
-                const isSelected = selectedSeats.some((s) => s.code === seat.code);
-                const priceData = seat.total?.alternatives?.[0]?.[0];
+const SeatRow: React.FC<SeatRowProps> = ({
+    seats,
+    rowNumber,
+    selectedSeats,
+    onSeatClick,
+    cabinType = 'economy',
+    isExitRow = false
+}) => {
+    // Group seats by their position (left, center, right)
+    const leftSeats = seats.filter((_, index) => index < 3);
+    const rightSeats = seats.filter((_, index) => index >= 3);
 
-                return (
+    return (
+        <StyledSeatRow $isExitRow={isExitRow}>
+            <div className="row-number">{rowNumber}</div>
+            <div className="seats">
+                {leftSeats.map((seat, index) => (
                     <Seat
-                        key={index}
+                        key={`left-${index}`}
                         code={seat.code}
                         available={seat.available}
-                        price={priceData}
-                        isSelected={isSelected}
+                        price={seat.total?.alternatives?.[0]?.[0]}
+                        isSelected={selectedSeats.some(s => s.code === seat.code)}
                         onSelect={() => onSeatClick(seat)}
+                        type={seat.type || (index === 0 ? 'window' : index === 1 ? 'middle' : 'aisle')}
                     />
-                );
-            })}
+                ))}
+                <div className="aisle" />
+                {rightSeats.map((seat, index) => (
+                    <Seat
+                        key={`right-${index}`}
+                        code={seat.code}
+                        available={seat.available}
+                        price={seat.total?.alternatives?.[0]?.[0]}
+                        isSelected={selectedSeats.some(s => s.code === seat.code)}
+                        onSelect={() => onSeatClick(seat)}
+                        type={index === rightSeats.length - 1 ? 'window' : index === 0 ? 'aisle' : 'middle'}
+                    />
+                ))}
+            </div>
+            <div className="row-number">{rowNumber}</div>
         </StyledSeatRow>
     );
 };
